@@ -78,7 +78,6 @@ final class ChatViewModel {
     @MainActor
     func sendMessage(_ content: String) async {
         isLoading = true
-        defer { isLoading = session.isResponding }
 
         do {
             // Check if we need to apply sliding window BEFORE sending
@@ -93,14 +92,19 @@ final class ChatViewModel {
                 // The streaming automatically updates the session transcript
             }
 
+            // Explicitly set isLoading to false when streaming completes successfully
+            isLoading = false
+
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             // Fallback: Handle context window exceeded by summarizing and creating new session
             await handleContextWindowExceeded(userMessage: content)
+            isLoading = false
 
         } catch {
             // Handle other errors by showing an error message
             errorMessage = handleFoundationModelsError(error)
             showError = true
+            isLoading = false
         }
     }
 
